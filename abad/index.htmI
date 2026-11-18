@@ -1,0 +1,481 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>شركة عباد الرحمن - نظام الحسابات السحابي</title>
+    <link href="https://googleapis.com" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #1e40af;
+            --primary-light: #3b82f6;
+            --secondary: #0f172a;
+            --bg: #f1f5f9;
+            --card: #ffffff;
+            --text: #1e293b;
+            --border: #e2e8f0;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --warning: #d97706;
+        }
+        * { box-sizing: border-box; font-family: 'Cairo', sans-serif; margin: 0; padding: 0; }
+        body { background-color: var(--bg); color: var(--text); }
+        
+        /* شاشة تسجيل الدخول */
+        #login-screen {
+            position: fixed; inset: 0; background: linear-gradient(135deg, #0f172a, #1e40af);
+            display: flex; align-items: center; justify-content: center; z-index: 9999; padding: 20px;
+        }
+        .login-box {
+            background: #fff; padding: 35px; border-radius: 16px; width: 100%; max-width: 400px;
+            box-shadow: 0 20px 25px -5px rgba(0,0,0,0.3); text-align: center;
+        }
+        .login-box h2 { color: var(--primary); margin-bottom: 8px; font-weight: 800; }
+        .login-box p { color: #64748b; font-size: 14px; margin-bottom: 20px; }
+        .login-box input {
+            width: 100%; padding: 12px; border: 1px solid var(--border); border-radius: 8px;
+            margin-bottom: 15px; font-size: 15px; text-align: center;
+        }
+        .login-box button {
+            width: 100%; padding: 12px; background: var(--primary); color: #fff; border: none;
+            border-radius: 8px; font-size: 16px; font-weight: 700; cursor: pointer;
+        }
+        .login-box button:hover { background: #1d4ed8; }
+
+        /* الهيكل الرئيسي */
+        #app { display: none; min-height: 100vh; flex-direction: column; }
+        header {
+            background: var(--secondary); color: #fff; padding: 15px 25px;
+            display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;
+        }
+        .brand { font-size: 20px; font-weight: 800; display: flex; align-items: center; gap: 10px; }
+        .cloud-status {
+            font-size: 12px; background: rgba(22, 163, 74, 0.2); color: #4ade80;
+            padding: 4px 12px; border-radius: 20px; border: 1px solid #4ade80;
+        }
+        .header-actions { display: flex; gap: 10px; align-items: center; }
+        .btn {
+            padding: 8px 16px; border: none; border-radius: 8px; cursor: pointer;
+            font-weight: 600; font-size: 14px; transition: 0.2s;
+        }
+        .btn-primary { background: var(--primary-light); color: #fff; }
+        .btn-success { background: var(--success); color: #fff; }
+        .btn-danger { background: var(--danger); color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid #fff; color: #fff; }
+
+        /* القائمة */
+        nav {
+            background: #fff; padding: 10px 25px; border-bottom: 1px solid var(--border);
+            display: flex; gap: 10px; overflow-x: auto;
+        }
+        .nav-btn {
+            padding: 10px 18px; border: none; background: transparent; border-radius: 8px;
+            font-weight: 700; color: #475569; cursor: pointer; white-space: nowrap;
+        }
+        .nav-btn.active { background: #eff6ff; color: var(--primary); }
+
+        /* المحتوى */
+        main { padding: 25px; max-width: 1300px; width: 100%; margin: 0 auto; flex: 1; }
+        .section { display: none; }
+        .section.active { display: block; }
+
+        /* البطاقات الإحصائية */
+        .stats-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 20px; margin-bottom: 25px;
+        }
+        .stat-card {
+            background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--border);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .stat-card h4 { color: #64748b; font-size: 14px; margin-bottom: 8px; }
+        .stat-card .val { font-size: 26px; font-weight: 800; color: var(--secondary); }
+
+        /* النماذج والجداول */
+        .card {
+            background: #fff; padding: 20px; border-radius: 12px; border: 1px solid var(--border);
+            margin-bottom: 20px; overflow-x: auto;
+        }
+        .card-title { font-size: 18px; font-weight: 700; margin-bottom: 15px; color: var(--primary); }
+        .form-grid {
+            display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 12px; margin-bottom: 15px;
+        }
+        input, select {
+            width: 100%; padding: 10px; border: 1px solid var(--border); border-radius: 8px; font-size: 14px;
+        }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; min-width: 600px; }
+        th, td { padding: 12px; text-align: right; border-bottom: 1px solid var(--border); font-size: 14px; }
+        th { background: #f8fafc; color: #475569; font-weight: 700; }
+
+        /* الطباعة */
+        @media print {
+            body * { visibility: hidden; }
+            #print-area, #print-area * { visibility: visible; }
+            #print-area { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; }
+            .no-print { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+
+<!-- شاشة تسجيل الدخول -->
+<div id="login-screen">
+    <div class="login-box">
+        <h2>شركة عباد الرحمن</h2>
+        <p>نظام إدارة الحسابات والمبيعات السحابي</p>
+        <input type="text" id="login-user" placeholder="اسم المستخدم (admin)" value="admin">
+        <input type="password" id="login-pass" placeholder="أدخل كلمة المرور">
+        <button onclick="checkLogin()">تسجيل الدخول</button>
+        <p id="login-error" style="color:red; margin-top:10px; display:none;">بيانات الدخول غير صحيحة!</p>
+    </div>
+</div>
+
+<!-- واجهة النظام -->
+<div id="app">
+    <header>
+        <div class="brand">
+            <span>🏢 شركة عباد الرحمن</span>
+            <span class="cloud-status" id="sync-status">● متصل بالسحابة</span>
+        </div>
+        <div class="header-actions">
+            <button class="btn btn-success" onclick="switchTab('pos')">+ فاتورة بيع جديدة</button>
+            <button class="btn btn-outline" onclick="logout()">خروج</button>
+        </div>
+    </header>
+
+    <nav>
+        <button class="nav-btn active" data-tab="dashboard" onclick="switchTab('dashboard')">📊 لوحة التحكم</button>
+        <button class="nav-btn" data-tab="pos" onclick="switchTab('pos')">🧾 المبيعات (كاشير)</button>
+        <button class="nav-btn" data-tab="products" onclick="switchTab('products')">📦 المخزن والمنتجات</button>
+        <button class="nav-btn" data-tab="purchases" onclick="switchTab('purchases')">🛒 المشتريات</button>
+        <button class="nav-btn" data-tab="customers" onclick="switchTab('customers')">👥 العملاء</button>
+        <button class="nav-btn" data-tab="suppliers" onclick="switchTab('suppliers')">🚚 الموردين</button>
+    </nav>
+
+    <main>
+        <!-- لوحة التحكم -->
+        <div id="dashboard" class="section active">
+            <div class="stats-grid">
+                <div class="stat-card"><h4>إجمالي المبيعات</h4><div class="val" id="stat-sales">0 ج.م</div></div>
+                <div class="stat-card"><h4>إجمالي المشتريات</h4><div class="val" id="stat-purchases">0 ج.م</div></div>
+                <div class="stat-card"><h4>عدد الأصناف بالمخزن</h4><div class="val" id="stat-products">0</div></div>
+                <div class="stat-card"><h4>صافي حركة النقدية</h4><div class="val" id="stat-net" style="color:var(--success)">0 ج.م</div></div>
+            </div>
+            <div class="card">
+                <div class="card-title">آخر فواتير المبيعات المسجلة سحابياً</div>
+                <table>
+                    <thead><tr><th>رقم الفاتورة</th><th>التاريخ</th><th>العميل</th><th>الإجمالي</th><th>المدفوع</th><th>المتبقي</th><th>إجراء</th></tr></thead>
+                    <tbody id="recent-sales-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- المبيعات -->
+        <div id="pos" class="section">
+            <div class="card">
+                <div class="card-title">إنشاء فاتورة بيع جديدة</div>
+                <div class="form-grid">
+                    <select id="sale-customer"><option value="عميل نقدي">عميل نقدي</option></select>
+                    <input type="text" id="sale-rep" placeholder="اسم المندوب (اختياري)">
+                </div>
+                <div class="form-grid">
+                    <select id="sale-product-select"></select>
+                    <input type="number" id="sale-qty" placeholder="الكمية" value="1" min="1">
+                    <button class="btn btn-primary" onclick="addToCart()">+ إضافة للصنف للفاتورة</button>
+                </div>
+                <table>
+                    <thead><tr><th>الصنف</th><th>السعر</th><th>الكمية</th><th>الإجمالي</th><th>حذف</th></tr></thead>
+                    <tbody id="cart-table"></tbody>
+                </table>
+                <div style="margin-top:20px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:15px;">
+                    <div>
+                        <strong>إجمالي الفاتورة: <span id="cart-total" style="font-size:20px; color:var(--primary)">0</span> ج.م</strong>
+                    </div>
+                    <div style="display:flex; gap:10px; align-items:center;">
+                        <input type="number" id="sale-paid" placeholder="المبلغ المدفوع" style="width:160px;">
+                        <button class="btn btn-success" onclick="saveSale()">💾 حفظ وطباعة الفاتورة</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+<!-- المخزن والمنتجات -->
+        <div id="products" class="section">
+            <div class="card">
+                <div class="card-title">إضافة صنف جديد للمخزن</div>
+                <div class="form-grid">
+                    <input type="text" id="prod-name" placeholder="اسم الصنف">
+                    <input type="number" id="prod-buy" placeholder="سعر الشراء">
+                    <input type="number" id="prod-sell" placeholder="سعر البيع">
+                    <input type="number" id="prod-qty" placeholder="الكمية الحالية">
+                    <button class="btn btn-primary" onclick="addProduct()">+ حفظ الصنف</button>
+                </div>
+                <table>
+                    <thead><tr><th>الصنف</th><th>سعر الشراء</th><th>سعر البيع</th><th>الرصيد بالمخزن</th><th>حذف</th></tr></thead>
+                    <tbody id="products-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- المشتريات -->
+        <div id="purchases" class="section">
+            <div class="card">
+                <div class="card-title">تسجيل فاتورة مشتريات (تزيد رصيد المخزن تلقائياً)</div>
+                <div class="form-grid">
+                    <select id="purch-supplier"><option value="مورد عام">مورد عام</option></select>
+                    <select id="purch-product"></select>
+                    <input type="number" id="purch-qty" placeholder="الكمية المشتراة">
+                    <input type="number" id="purch-cost" placeholder="إجمالي التكلفة">
+                    <button class="btn btn-primary" onclick="addPurchase()">+ تسجيل المشتريات</button>
+                </div>
+                <table>
+                    <thead><tr><th>التاريخ</th><th>المورد</th><th>الصنف</th><th>الكمية</th><th>التكلفة</th></tr></thead>
+                    <tbody id="purchases-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- العملاء -->
+        <div id="customers" class="section">
+            <div class="card">
+                <div class="card-title">إدارة العملاء</div>
+                <div class="form-grid">
+                    <input type="text" id="cust-name" placeholder="اسم العميل">
+                    <input type="text" id="cust-phone" placeholder="رقم الهاتف">
+                    <button class="btn btn-primary" onclick="addPerson('customers', 'cust-name', 'cust-phone')">+ إضافة عميل</button>
+                </div>
+                <table>
+                    <thead><tr><th>الاسم</th><th>الهاتف</th><th>إجمالي المديونية (المتبقي)</th><th>حذف</th></tr></thead>
+                    <tbody id="customers-table"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- الموردين -->
+        <div id="suppliers" class="section">
+            <div class="card">
+                <div class="card-title">إدارة الموردين</div>
+                <div class="form-grid">
+                    <input type="text" id="supp-name" placeholder="اسم المورد">
+                    <input type="text" id="supp-phone" placeholder="رقم الهاتف">
+                    <button class="btn btn-primary" onclick="addPerson('suppliers', 'supp-name', 'supp-phone')">+ إضافة مورد</button>
+                </div>
+                <table>
+                    <thead><tr><th>الاسم</th><th>الهاتف</th><th>حذف</th></tr></thead>
+                    <tbody id="suppliers-table"></tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+</div>
+
+<!-- منطقة الطباعة -->
+<div id="print-area" style="display:none;"></div>
+
+<script type="module">
+    import { initializeApp } from "https://gstatic.com";
+    import { getFirestore, collection, addDoc, onSnapshot, doc, deleteDoc, updateDoc, increment } from "https://gstatic.com";
+
+    const firebaseConfig = {
+        apiKey: "AIzaSyCDq5zhEXgbDhQ0lPLPNYcoD2y32kLduMXK0",
+        authDomain: "abad-alrahman-3ef69.firebaseapp.com",
+        projectId: "abad-alrahman-3ef69",
+        storageBucket: "abad-alrahman-3ef69.firebasestorage.app",
+        messagingSenderId: "794269036138",
+        appId: "1:794269036138:web:c2f72ece870220abd9e413"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const db = getFirestore(app);
+
+    let state = { products: [], sales: [], purchases: [], customers: [], suppliers: [], cart: [] };
+
+    window.checkLogin = () => {
+        const u = document.getElementById('login-user').value.trim();
+        const p = document.getElementById('login-pass').value;
+        if (u === 'admin' && p === 'DDssaa##2211') {
+            sessionStorage.setItem('auth_ebad', '1');
+            document.getElementById('login-screen').style.display = 'none';
+            document.getElementById('app').style.display = 'flex';
+        } else {
+            document.getElementById('login-error').style.display = 'block';
+        }
+    };
+    window.logout = () => { sessionStorage.removeItem('auth_ebad'); location.reload(); };
+    if (sessionStorage.getItem('auth_ebad') === '1') {
+        document.getElementById('login-screen').style.display = 'none';
+        document.getElementById('app').style.display = 'flex';
+    }
+
+    window.switchTab = (tabId) => {
+        document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+        document.getElementById(tabId).classList.add('active');
+        document.querySelector(`[data-tab="${tabId}"]`).classList.add('active');
+    };
+
+    onSnapshot(collection(db, "products"), (snap) => {
+        state.products = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderProducts();
+        updateDashboard();
+    });
+
+    onSnapshot(collection(db, "sales"), (snap) => {
+        state.sales = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderSales();
+        renderPeople();
+        updateDashboard();
+    });
+
+    onSnapshot(collection(db, "purchases"), (snap) => {
+        state.purchases = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderPurchases();
+        updateDashboard();
+    });
+
+    onSnapshot(collection(db, "customers"), (snap) => {
+        state.customers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderPeople();
+    });
+
+    onSnapshot(collection(db, "suppliers"), (snap) => {
+        state.suppliers = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+        renderPeople();
+    });
+
+    window.addProduct = async () => {
+        const name = document.getElementById('prod-name').value.trim();
+        const buy = Number(document.getElementById('prod-buy').value);
+        const sell = Number(document.getElementById('prod-sell').value);
+        const qty = Number(document.getElementById('prod-qty').value);
+        if (!name || !sell) return alert('أدخل اسم الصنف وسعر البيع');
+        await addDoc(collection(db, "products"), { name, buy, sell, qty });
+        document.getElementById('prod-name').value = '';
+        document.getElementById('prod-buy').value = '';
+        document.getElementById('prod-sell').value = '';
+        document.getElementById('prod-qty').value = '';
+    };
+
+    window.deleteItem = async (col, id) => {
+        if (confirm('هل أنت متأكد من الحذف؟')) await deleteDoc(doc(db, col, id));
+    };
+
+    window.addToCart = () => {
+        const prodId = document.getElementById('sale-product-select').value;
+        const qty = Number(document.getElementById('sale-qty').value);
+        const prod = state.products.find(p => p.id === prodId);
+        if (!prod || qty <= 0) return;
+        state.cart.push({ id: prod.id, name: prod.name, price: prod.sell, qty, total: prod.sell * qty });
+        renderCart();
+    };
+
+    window.removeFromCart = (idx) => { state.cart.splice(idx, 1); renderCart(); };
+
+    function renderCart() {
+        const tbody = document.getElementById('cart-table');
+        tbody.innerHTML = state.cart.map((c, i) => `
+            <tr><td>${c.name}</td><td>${c.price}</td><td>${c.qty}</td><td>${c.total}</td>
+            <td><button class="btn btn-danger" onclick="removeFromCart(${i})">X</button></td></tr>
+        `).join('');
+        const total = state.cart.reduce((s, c) => s + c.total, 0);
+        document.getElementById('cart-total').innerText = total;
+        document.getElementById('sale-paid').value = total;
+    }
+
+    window.saveSale = async () => {
+        if (state.cart.length === 0) return alert('الفاتورة فارغة!');
+        const total = state.cart.reduce((s, c) => s + c.total, 0);
+        const paid = Number(document.getElementById('sale-paid').value);
+        const rem = total - paid;
+        const customer = document.getElementById('sale-customer').value;
+        const rep = document.getElementById('sale-rep').value;
+        const invNum = 'INV-' + Math.floor(1000 + Math.random() * 9000);
+        const date = new Date().toLocaleDateString('ar-EG');
+
+        await addDoc(collection(db, "sales"), { invNum, date, customer, rep, items: state.cart, total, paid, rem });
+
+        for (let item of state.cart) {
+            await updateDoc(doc(db, "products", item.id), { qty: increment(-item.qty) });
+        }
+
+        printInvoice({ invNum, date, customer, rep, items: state.cart, total, paid, rem });
+        state.cart = [];
+        renderCart();
+        alert('تم حفظ الفاتورة على السحابة بنجاح!');
+    };
+
+    window.printInvoice = (inv) => {
+        const area = document.getElementById('print-area');
+        area.style.display = 'block';
+        area.innerHTML = `
+            <div style="text-align:center; border-bottom:2px solid #000; padding-bottom:10px; margin-bottom:15px;">
+                <h2>شركة عباد الرحمن</h2>
+                <p>فاتورة مبيعات رقم: ${inv.invNum} | التاريخ: ${inv.date}</p>
+                <p>العميل: ${inv.customer} ${inv.rep ? '| المندوب: ' + inv.rep : ''}</p>
+            </div>
+            <table style="width:100%; border-collapse:collapse; text-align:right;">
+يُرجى استخدام الرمز البرمجي بحذر.
+الصنفالسعرالكميةالإجمالي{inv.items.map(i => `<tr><td>{i.name}\({i.price}</td><td>\){i.qty}${i.total}`).join('')}
+الإجمالي: ${inv.total} ج.م
+المدفوع: ${inv.paid} ج.م | المتبقي: ${inv.rem} ج.م
+
+`;
+window.print();
+area.style.display = 'none';
+};
+window.addPurchase = async () => {
+const supplier = document.getElementById('purch-supplier').value;
+const prodId = document.getElementById('purch-product').value;
+const qty = Number(document.getElementById('purch-qty').value);
+const cost = Number(document.getElementById('purch-cost').value);
+const prod = state.products.find(p => p.id === prodId);
+if (!prod || qty <= 0) return alert('اختر الصنف والكمية');
+await addDoc(collection(db, "purchases"), { date: new Date().toLocaleDateString('ar-EG'), supplier, prodName: prod.name, qty, cost });
+await updateDoc(doc(db, "products", prodId), { qty: increment(qty) });
+alert('تم تسجيل المشتريات وتحديث المخزن!');
+};
+window.addPerson = async (col, nameId, phoneId) => {
+const name = document.getElementById(nameId).value.trim();
+const phone = document.getElementById(phoneId).value.trim();
+if (!name) return alert('أدخل الاسم');
+await addDoc(collection(db, col), { name, phone });
+document.getElementById(nameId).value = '';
+document.getElementById(phoneId).value = '';
+};
+function renderProducts() {
+document.getElementById('products-table').innerHTML = state.products.map(p => `
+${p.name}${p.buy}${p.sell}${p.qty}حذف).join(''); const opts = state.products.map(p => ${p.name} (${p.sell} ج.م - متاح: ${p.qty})`).join('');
+document.getElementById('sale-product-select').innerHTML = opts;
+document.getElementById('purch-product').innerHTML = opts;
+}
+function renderSales() {
+document.getElementById('recent-sales-table').innerHTML = state.sales.map(s => `
+${s.invNum}${s.date}${s.customer}${s.total}${s.paid}${s.rem}طباعة`).join('');
+}
+function renderPurchases() {
+document.getElementById('purchases-table').innerHTML = state.purchases.map(p => `
+${p.date}${p.supplier}${p.prodName}${p.qty}${p.cost}`).join('');
+}
+function renderPeople() {
+document.getElementById('customers-table').innerHTML = state.customers.map(c => {
+const debt = state.sales.filter(s => s.customer === c.name).reduce((sum, s) => sum + (s.rem || 0), 0);
+return `${c.name}${c.phone}${debt} ج.م
+حذف
+`;
+}).join('');
+document.getElementById('sale-customer').innerHTML = <option value="عميل نقدي">عميل نقدي</option> +
+state.customers.map(c => <option value="${c.name}">${c.name}</option>).join('');
+document.getElementById('suppliers-table').innerHTML = state.suppliers.map(s => `
+${s.name}${s.phone}حذف).join(''); document.getElementById('purch-supplier').innerHTML = مورد عام+ state.suppliers.map(s =>${s.name}`).join('');
+}
+function updateDashboard() {
+const totalSales = state.sales.reduce((s, x) => s + (x.total || 0), 0);
+const totalPurch = state.purchases.reduce((s, x) => s + (x.cost || 0), 0);
+document.getElementById('stat-sales').innerText = totalSales + ' ج.م';
+document.getElementById('stat-purchases').innerText = totalPurch + ' ج.م';
+document.getElementById('stat-products').innerText = state.products.length;
+document.getElementById('stat-net').innerText = (totalSales - totalPurch) + ' ج.م';
+}
+</script>
+</body>
+</html>
